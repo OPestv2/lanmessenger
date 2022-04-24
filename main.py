@@ -1,16 +1,38 @@
-# This is a sample Python script.
+#!/bin/python3
+import os.path
+import sys
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+from PyQt5.QtWidgets import QApplication
+
+from GUI import GUI
+from JSONParser import JSONParser
+from Messenger import Messenger
+from Static import USER_OBJECT, REGISTRATION, LOGIN
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+class Main:
+    def __init__(self, argv):
+        self.app = QApplication(argv)
+        # possible OSError if config file does not exist or could not read it
+        self.parser = JSONParser()
+        self.messenger = Messenger()
+        self.GUI = GUI()
+
+        # if user object is null display registration screen, otherwise login screen
+        if self.parser.read_json(USER_OBJECT) is None:
+            auth_screen_type = REGISTRATION
+        else:
+            auth_screen_type = LOGIN
+        self.GUI.set_screen(auth_screen_type)
+
+        self.GUI.show()
+        self.app.exec_()
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    main = Main(sys.argv)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+
+
+
