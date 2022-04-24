@@ -1,5 +1,1 @@
-{
-  "user" : "aa",
-  "servers": null,
-  "friends" : null
-}
+{"user": {"email": "", "name": "", "passwd": ""}, "servers": null, "friends": null}
