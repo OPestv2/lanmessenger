@@ -5,5 +5,5 @@ Messenger class is responsible for messaging logic, setting config, registration
 
 
 class Messenger:
-    def __init__(self):
-        pass
+    def __init__(self, gui):
+        self.gui = gui
