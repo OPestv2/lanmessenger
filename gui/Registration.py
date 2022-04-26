@@ -1,7 +1,7 @@
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QPushButton, QLineEdit, QLabel, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QPushButton, QLineEdit, QLabel, QVBoxLayout, QWidget, QFormLayout
 
-from Static import MAX_INPUT_LENGTH, FORM_ERR_FONT_SIZE, ERR_FONT_COLOR
+from Static import MAX_INPUT_LENGTH, FORM_ERR_FONT_SIZE, ERR_FONT_COLOR, TITLE_FONT_SIZE
 from gui.ComponentTemplates import get_label
 
 
@@ -15,82 +15,86 @@ class Registration(QWidget):
         password_input
     """
 
-    def __init__(self, parent=None):
-        super(Registration, self).__init__(parent)
-        self.parent = parent
-
-    def construct(self, err):
+    def __init__(self, parent=None, err=dict(), old_values=dict()):
         """
         Function creates QWidget object - registration view.
 
-        :param err: Dict of errors encountered while validating
+        :param parent: GUI object that holds this widget
+        :param err: Dict of errors encountered while validating this form
         :type err: dict
+        :param old_values: Dict of values processed (non-empty if error occurs)
+        :type old_values: dict
         :return: None
         """
 
+        super(Registration, self).__init__(parent)
+        self.parent = parent
         self.layout = QVBoxLayout()
 
         # title
-        self.label = get_label(self, "Registration")
+        self.label = get_label(self, "Registration", font_size=TITLE_FONT_SIZE)
         self.layout.addWidget(self.label)
+
+        # form layout
+        form_widget = QWidget(self)
+        form_layout = QFormLayout()
 
         # email
         self.email = get_label(self, "Email")
-        self.layout.addWidget(self.email)
-
         # email input
         self.email_input = QLineEdit(self)
+        if 'email' in old_values:
+            self.email_input.setText(old_values['email'])
         self.email_input.setMaxLength(MAX_INPUT_LENGTH)
-        self.layout.addWidget(self.email_input)
+        form_layout.addRow(self.email, self.email_input)
 
         # email error
         if 'email' in err:
             self.email_err = get_label(self, err['email'], FORM_ERR_FONT_SIZE, ERR_FONT_COLOR)
-            self.layout.addWidget(self.email_err)
+            form_layout.addRow(self.email_err)
 
         # username
         self.name = get_label(self, "Username")
-        self.layout.addWidget(self.name)
-
         # username input
         self.name_input = QLineEdit(self)
+        if 'name' in old_values:
+            self.name_input.setText(old_values['name'])
         self.name_input.setMaxLength(MAX_INPUT_LENGTH)
-        self.layout.addWidget(self.name_input)
+        form_layout.addRow(self.name, self.name_input)
 
-        # name error
+        # username error
         if 'name' in err:
             self.name_err = get_label(self, err['name'], FORM_ERR_FONT_SIZE, ERR_FONT_COLOR)
-            self.layout.addWidget(self.name_err)
+            form_layout.addRow(self.name_err)
 
         # password
-        self.passwd = get_label(self, 'Password')
-        self.layout.addWidget(self.passwd)
-
+        self.passwd = get_label(self, "Password")
         # password input
         self.passwd_input = QLineEdit(self)
         self.passwd_input.setEchoMode(QLineEdit.Password)
         self.passwd_input.setMaxLength(MAX_INPUT_LENGTH)
-        self.layout.addWidget(self.passwd_input)
+        form_layout.addRow(self.passwd, self.passwd_input)
 
         # re passwd error
         if 'passwd' in err:
             self.passwd_err = get_label(self, err['passwd'], FORM_ERR_FONT_SIZE, ERR_FONT_COLOR)
-            self.layout.addWidget(self.passwd_err)
+            form_layout.addRow(self.passwd_err)
 
         # password
         self.re_passwd = get_label(self, 'Confirm Password')
-        self.layout.addWidget(self.re_passwd)
-
         # password input
         self.re_passwd_input = QLineEdit(self)
         self.re_passwd_input.setEchoMode(QLineEdit.Password)
         self.re_passwd_input.setMaxLength(MAX_INPUT_LENGTH)
-        self.layout.addWidget(self.re_passwd_input)
+        form_layout.addRow(self.re_passwd, self.re_passwd_input)
 
         # passwd error
         if 're_passwd' in err:
             self.re_passwd_err = get_label(self, err['re_passwd'], FORM_ERR_FONT_SIZE, ERR_FONT_COLOR)
-            self.layout.addWidget(self.re_passwd_err)
+            form_layout.addRow(self.re_passwd_err)
+
+        form_widget.setLayout(form_layout)
+        self.layout.addWidget(form_widget)
 
         # register btn
         self.register_btn = QPushButton(self)
@@ -100,11 +104,10 @@ class Registration(QWidget):
 
         self.setLayout(self.layout)
 
-        return self
-
     def get_values(self):
         """
         Function returns dict of input fields
+
         :return: form values
         :rtype: dict
         """
@@ -115,23 +118,3 @@ class Registration(QWidget):
         values['passwd'] = self.passwd_input.text()
         values['re_passwd'] = self.re_passwd_input.text()
         return values
-
-    def clear_all(self):
-        """
-        After successful registration reset all input fields
-
-        :return: None
-        """
-        self.email_input.setText("")
-        self.name_input.setText("")
-        self.passwd_input.setText("")
-        self.re_passwd_input.setText("")
-
-    def clear_passwd(self):
-        """
-        In case of failed registration clear password only
-
-        :return: None
-        """
-        self.passwd_input.setText("")
-        self.re_passwd_input.setText("")
