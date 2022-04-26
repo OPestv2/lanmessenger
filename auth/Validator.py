@@ -1,5 +1,10 @@
 import re
 
+import bcrypt
+
+from Static import MIN_USERNAME_LEN, MAX_USERNAME_LEN, MIN_PASSWORD_LEN, MAX_PASSWORD_LEN, SPECIAL_CHARACTERS, \
+    MAX_EMAIL_LEN
+
 
 def validate_email(email):
     """
@@ -16,15 +21,16 @@ def validate_email(email):
         return 'Email address is empty'
 
     # email too long
-    if len(email) > 60:
-        return 'Email address must be up to 60 characters long'
+    if len(email) > MAX_EMAIL_LEN:
+        return f'Email address must be up to {MAX_EMAIL_LEN} characters long'
 
     # email structure is invalid
     regex = '^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
-    if re.search(regex, email):
+    if re.search(regex, email) is None:
         return 'Email address is invalid'
 
     return None
+
 
 def validate_username(username):
     """
@@ -41,12 +47,12 @@ def validate_username(username):
         return 'Username is empty'
 
     # username too short
-    if len(username) < 3:
-        return 'Username must be at least 3 characters long'
+    if len(username) < MIN_USERNAME_LEN:
+        return f'Username must be at least {MIN_USERNAME_LEN} characters long'
 
     # username too long
-    if len(username) > 30:
-        return 'Username can be up to 30 characters long'
+    if len(username) > MAX_USERNAME_LEN:
+        return f'Username can be up to {MAX_USERNAME_LEN} characters long'
 
     # username contains whitespaces
     if re.search("\s", username) is not None:
@@ -74,14 +80,13 @@ def validate_password(password):
         return 'Password is empty'
 
     # password is too short
-    if len(password) < 8:
-        return 'Password must be at least 8 characters long'
+    if len(password) < MIN_PASSWORD_LEN:
+        return f'Password must be at least {MIN_PASSWORD_LEN} characters long'
 
     # password is too long
-    if len(password) > 40:
-        return 'Password can be up to 40 characters long'
+    if len(password) > MAX_PASSWORD_LEN:
+        return f'Password can be up to {MAX_PASSWORD_LEN} characters long'
 
-    specials = ['$','@','!','%']
     # password contains letters, digits and special characters
     if not any(char.isdigit() for char in password):
         return 'Password must contain at least one digit'
@@ -92,8 +97,8 @@ def validate_password(password):
     if not any(char.islower() for char in password):
         return 'Password must contain at least one lowercase letter'
 
-    if not any(char in specials for char in password):
-        return 'Password must contain at least one of following characters: ' + (", ".join(specials))
+    if not any(char in SPECIAL_CHARACTERS for char in password):
+        return 'Password must contain at least one of following characters: ' + (", ".join(SPECIAL_CHARACTERS))
 
     return None
 
@@ -110,8 +115,29 @@ def validate_confirm_password(password, re_password):
     :return: None/str
     """
 
+    # re password is empty
+    if re_password is None or len(re_password) == 0:
+        return 'Password confirmation is empty'
+
     # password and re_password matches
     if password != re_password:
         return 'Passwords do not match'
 
     return None
+
+
+def authorize(password, password_hash):
+    # passwd is empty
+    if password is None or len(password) == 0:
+        return "Password is empty"
+
+    # passwd is too long
+    if len(password) > MAX_PASSWORD_LEN:
+        return "Password is too long"
+
+    # hash of given password does not match stored hash
+    if not bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8")):
+        return "Password is incorrect"
+
+    return None
+

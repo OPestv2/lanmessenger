@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 import sys
 
 from Static import ABS_PATH
@@ -14,9 +13,6 @@ class JSONParser:
     def __init__(self):
         self.config_path = ABS_PATH + "config.json"
         self.config = self.__load_configuration()
-
-    def backup_config(self):
-        pass
 
     def restore_config(self):
         pass
@@ -35,7 +31,6 @@ class JSONParser:
     #     :param value:
     #     :return:
     #     """
-
 
     def read_json(self, key_list):
         """
@@ -72,7 +67,7 @@ class JSONParser:
         :return: None
         """
 
-        # find (even deeply nested) value
+        # find nested value
         try:
             current_element = self.config
             for key in key_list[:-1]:
@@ -92,34 +87,6 @@ class JSONParser:
     def delete_json(self):
         pass
 
-    def __save(self):
-        """
-        Save changed config to config.json file.
-
-        :return: None
-        """
-        try:
-            # backup config
-            source = self.config_path
-            destination = ABS_PATH + "tmp/"
-            tmp_config_path = shutil.copy(source, destination)
-
-            # config dict to string
-            config_str = json.dumps(self.config)
-
-            # overwrite config
-            with open(self.config_path, "w") as config_file:
-                config_file.write(config_str)
-
-            # remove backup
-            os.remove(tmp_config_path)
-        except FileNotFoundError:
-            print("[!!!] Config file unreachable.")
-            sys.exit(0)
-        except:
-            print("[!!!] Unknown error encountered when parsing config.json file.")
-            sys.exit(0)
-
     def __load_configuration(self):
         """
         Function loads content of config.json to object variable.
@@ -132,8 +99,38 @@ class JSONParser:
             with open(self.config_path, "r") as config_file:
                 return json.load(config_file)
         except FileNotFoundError:
-            print("[!!!] Config file not found.")
+            print("[!] Config file not found.")
+            self.__create_new_config()
+        except:
+            print("[!!!] Unknown error encountered when parsing config.json file.")
             sys.exit(0)
+
+    def __create_new_config(self):
+        """
+        If config file does not exist create new one
+
+        :return: None
+        """
+        # save new config
+        self.config = {'user': None}
+        self.__save()
+
+        # restart
+        os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
+
+    def __save(self):
+        """
+        Save changed config to config.json file.
+
+        :return: None
+        """
+        try:
+            # config dict to string
+            config_str = json.dumps(self.config)
+
+            # overwrite config
+            with open(self.config_path, "w") as config_file:
+                config_file.write(config_str)
         except:
             print("[!!!] Unknown error encountered when parsing config.json file.")
             sys.exit(0)

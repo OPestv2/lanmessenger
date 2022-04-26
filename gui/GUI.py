@@ -10,14 +10,23 @@ from Static import ABS_PATH, CONFIG, MESSENGER, REGISTRATION, LOGIN, SEND_EMAIL,
 from auth.Auth import Auth
 from gui.Config import Config
 from gui.Login import Login
+from gui.MenuBar import MenuBar
 from gui.Messenger import Messenger
 from gui.Registration import Registration
 from gui.ResetPasswd import ResetPasswd
 from gui.SendEmail import SendEmail
 
 
-STD_WIDTH = 550
-STD_HEIGHT = 350
+def dict_is_empty(dictionary):
+    """
+    Check if err dictionary is empty. Just to understand why dict is mapped to boolean
+
+    :param dictionary: Dictionary containing wrong values added in validation
+    :type dictionary: dict
+    :return: Returns true if dict is empty or false if not
+    :rtype: bool
+    """
+    return not bool(dictionary)
 
 
 class GUI(QMainWindow):
@@ -29,17 +38,22 @@ class GUI(QMainWindow):
         self.current_screen = None
         self.auth = Auth()
 
+        # add menu bar and status bar
+        self.menubar = MenuBar(self)
+        self.setMenuBar(self.menubar)
+        self.statusBar()
+
+        # store screens
+        self.login_screen = None
+        self.register_screen = None
+        self.messenger_screen = None
+        self.config_screen = None
+        self.send_email_screen = None
+        self.reset_passwd_screen = None
+
         # set icon
         self.ICON_PATH = ABS_PATH + "resources/icon/favicon.ico"
         self.setWindowIcon(QIcon(self.ICON_PATH))
-
-        # store screen objects
-        self.login_screen = Login(self)
-        self.register_screen = Registration(self)
-        self.messenger_screen = Messenger(self)
-        self.config_screen = Config(self)
-        self.send_email_screen = SendEmail(self)
-        self.reset_passwd_screen = ResetPasswd(self)
 
         # if user object is null display registration screen, otherwise login screen
         if self.auth.user_exists():
@@ -47,7 +61,7 @@ class GUI(QMainWindow):
         else:
             self.set_screen(REGISTRATION)
 
-    def set_screen(self, screen_type, err={}):
+    def set_screen(self, screen_type, err=dict(), old_values=dict()):
         """
         Function sets appropriate QWidget.
 
@@ -56,14 +70,10 @@ class GUI(QMainWindow):
         :return: None
         """
 
-        # if err is None:
-        #     err = {}
-        # if self.current_screen != screen_type:
-        #     self.current_screen = screen_type
         if screen_type == LOGIN:
             self.__display_login_screen(err)
         elif screen_type == REGISTRATION:
-            self.__display_register_screen(err)
+            self.__display_register_screen(err, old_values)
         elif screen_type == MESSENGER:
             self.__display_messenger_screen()
         elif screen_type == CONFIG:
@@ -78,22 +88,28 @@ class GUI(QMainWindow):
             sys.exit(0)
 
     def __display_login_screen(self, err):
-        self.setCentralWidget(self.login_screen.construct(err))
+        self.login_screen = Login(self, err)
+        self.setCentralWidget(self.login_screen)
 
-    def __display_register_screen(self, err):
-        self.setCentralWidget(self.register_screen.construct(err))
+    def __display_register_screen(self, err, old_values):
+        self.register_screen = Registration(self, err, old_values)
+        self.setCentralWidget(self.register_screen)
 
     def __display_messenger_screen(self):
-        self.setCentralWidget(self.messenger_screen.construct())
+        self.messenger_screen = Messenger(self)
+        self.setCentralWidget(self.messenger_screen)
 
     def __display_config_screen(self, err):
-        self.setCentralWidget(self.config_screen.construct(err))
+        self.config_screen = Config(self, err)
+        self.setCentralWidget(self.config_screen)
 
     def __display_send_email_screen(self):
-        self.setCentralWidget(self.send_email_screen.construct())
+        self.send_email_screen = SendEmail(self)
+        self.setCentralWidget(self.send_email_screen)
 
     def __display_reset_passwd_screen(self, err):
-        self.setCentralWidget(self.reset_passwd_screen.construct(err))
+        self.register_screen = ResetPasswd(self, err)
+        self.setCentralWidget(self.register_screen)
 
     def register(self):
         print("registration")
@@ -101,33 +117,44 @@ class GUI(QMainWindow):
         # retrieve data from form
         data = self.register_screen.get_values()
 
-
         # authenticate user
         err = self.auth.register_user(data)
 
-        print(err)
-
         # no errors
-        if self.__dict_is_empty(err):
+        if dict_is_empty(err):
             # redirect to login form
-            print("GUI.register registration successful")
             self.set_screen(LOGIN)
         # there are errors
         else:
             # redirect to registration form with attached errors
-            print("GUI.register registration failed")
-            self.set_screen(REGISTRATION, err)
+            self.set_screen(REGISTRATION, err, data)
 
+    def login(self):
+        print("login")
 
+        # retrieve data from form
+        data = self.login_screen.get_values()
 
-    def __dict_is_empty(self, dict):
-        """
-        Check if err dictionary is empty. Just to understand why dict is mapped to boolean
+        # authenticate user
+        err = self.auth.login_user(data)
 
-        :param dict: Dictionary containing wrong values added in validation
-        :type dict: dict
-        :return: Returns true if dict is empty or false if not
-        :rtype: bool
-        """
-        return not bool(dict)
+        # no errors
+        if dict_is_empty(err):
+            # redirect to messenger
+            print("GUI.login success")
+            self.menubar.enable_settings()
+            self.set_screen(MESSENGER)
+        # there are errors
+        else:
+            # redirect to login form with attached errors
+            print("GUI.login fail")
+            self.set_screen(LOGIN, err)
 
+    def config(self, data=dict()):
+        print("config")
+
+        if bool(data):
+            # save changes
+            pass
+
+        self.set_screen(CONFIG)
